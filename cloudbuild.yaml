@@ -1,7 +1,14 @@
 steps:
-  - name: gcr.io/cloud-builders/docker
-    args: [build, -t, ${_REGION}-docker.pkg.dev/$PROJECT_ID/palette/palette:${_TAG}, .]
-  - name: gcr.io/cloud-builders/docker
-    args: [push, ${_REGION}-docker.pkg.dev/$PROJECT_ID/palette/palette:${_TAG}]
+  # ${...} を文字列として扱えるよう、全ての引数を引用符で囲む。
+  - name: "gcr.io/cloud-builders/docker"
+    args:
+      - "build"
+      - "-t"
+      - "${_REGION}-docker.pkg.dev/$PROJECT_ID/palette/palette:${_TAG}"
+      - "."
+  - name: "gcr.io/cloud-builders/docker"
+    args:
+      - "push"
+      - "${_REGION}-docker.pkg.dev/$PROJECT_ID/palette/palette:${_TAG}"
 images:
-  - ${_REGION}-docker.pkg.dev/$PROJECT_ID/palette/palette:${_TAG}
+  - "${_REGION}-docker.pkg.dev/$PROJECT_ID/palette/palette:${_TAG}"
