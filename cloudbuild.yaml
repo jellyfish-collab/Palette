@@ -1,0 +1,7 @@
+steps:
+  - name: gcr.io/cloud-builders/docker
+    args: [build, -t, ${_REGION}-docker.pkg.dev/$PROJECT_ID/palette/palette:${_TAG}, .]
+  - name: gcr.io/cloud-builders/docker
+    args: [push, ${_REGION}-docker.pkg.dev/$PROJECT_ID/palette/palette:${_TAG}]
+images:
+  - ${_REGION}-docker.pkg.dev/$PROJECT_ID/palette/palette:${_TAG}

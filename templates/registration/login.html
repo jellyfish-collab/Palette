@@ -1,0 +1,1 @@
+{% extends 'base.html' %}{% block content %}<main class="narrow"><h1>ログイン</h1><form method="post" class="upload-form">{% csrf_token %}{{ form.as_p }}<button class="primary">ログイン</button></form></main>{% endblock %}

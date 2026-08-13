@@ -1,0 +1,1 @@
+{% extends 'base.html' %}{% block content %}<main class="narrow"><h1>写真を投稿</h1><p>JPEG、PNG、WebP（10 MBまで）</p><form method="post" enctype="multipart/form-data" class="upload-form">{% csrf_token %}{{ form.as_p }}<button class="primary">アップロード</button></form></main>{% endblock %}

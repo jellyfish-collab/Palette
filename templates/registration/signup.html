@@ -1,0 +1,1 @@
+{% extends 'base.html' %}{% block content %}<main class="narrow"><h1>アカウント登録</h1><form method="post" class="upload-form">{% csrf_token %}{{ form.as_p }}<button class="primary">登録する</button></form></main>{% endblock %}
