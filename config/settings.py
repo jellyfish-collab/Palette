@@ -84,3 +84,15 @@ SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 SECURE_SSL_REDIRECT = os.environ.get("SECURE_SSL_REDIRECT", "false").lower() == "true"
 SESSION_COOKIE_SECURE = not DEBUG
 CSRF_COOKIE_SECURE = not DEBUG
+
+# DEBUG=False でも例外のスタックトレースを Cloud Run の標準エラーへ出力する。
+# ブラウザには詳細を返さず、Cloud Logging だけで安全に障害を調査できる。
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {"console": {"class": "logging.StreamHandler"}},
+    "loggers": {
+        "django.request": {"handlers": ["console"], "level": "ERROR", "propagate": False},
+        "django.server": {"handlers": ["console"], "level": "ERROR", "propagate": False},
+    },
+}
