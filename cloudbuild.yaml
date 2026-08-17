@@ -1,14 +1,41 @@
 steps:
-  # ${...} を文字列として扱えるよう、全ての引数を引用符で囲む。
+  # GitHub の各コミットを識別できるタグで、アプリ用イメージを作成する。
   - name: "gcr.io/cloud-builders/docker"
     args:
       - "build"
       - "-t"
-      - "${_REGION}-docker.pkg.dev/$PROJECT_ID/palette/palette:${_TAG}"
+      - "${_REGION}-docker.pkg.dev/$PROJECT_ID/palette/palette:$COMMIT_SHA"
       - "."
+
+  # ビルドしたイメージを Artifact Registry に保存する。
   - name: "gcr.io/cloud-builders/docker"
     args:
       - "push"
-      - "${_REGION}-docker.pkg.dev/$PROJECT_ID/palette/palette:${_TAG}"
+      - "${_REGION}-docker.pkg.dev/$PROJECT_ID/palette/palette:$COMMIT_SHA"
+
+  # 公開用 Web サービスを、新しいイメージのリビジョンへ更新する。
+  # Cloud SQL・環境変数・メモリなど、既存サービスの設定は維持される。
+  - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
+    entrypoint: "gcloud"
+    args:
+      - "run"
+      - "deploy"
+      - "palette-web"
+      - "--image=${_REGION}-docker.pkg.dev/$PROJECT_ID/palette/palette:$COMMIT_SHA"
+      - "--region=${_REGION}"
+      - "--quiet"
+
+  # 非同期処理用 Worker も同じイメージに更新し、Web とコードの版をそろえる。
+  - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
+    entrypoint: "gcloud"
+    args:
+      - "run"
+      - "deploy"
+      - "palette-worker"
+      - "--image=${_REGION}-docker.pkg.dev/$PROJECT_ID/palette/palette:$COMMIT_SHA"
+      - "--region=${_REGION}"
+      - "--quiet"
+
 images:
-  - "${_REGION}-docker.pkg.dev/$PROJECT_ID/palette/palette:${_TAG}"
+  # Cloud Build の画面から、コミットと対応するコンテナイメージを確認できる。
+  - "${_REGION}-docker.pkg.dev/$PROJECT_ID/palette/palette:$COMMIT_SHA"
