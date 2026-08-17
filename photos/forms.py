@@ -50,10 +50,13 @@ def optimize_upload(image, max_bytes=settings.MAX_UPLOAD_BYTES, max_pixels=setti
 
 
 class PhotoUploadForm(forms.Form):
-    image = forms.ImageField(label="写真を選択")
+    # ImageField ではなく FileField を使い、Pillowが画像を開く前に受信サイズを確認する。
+    image = forms.FileField(label="写真を選択")
 
     def clean_image(self):
         image = self.cleaned_data["image"]
+        if image.size > settings.MAX_RECEIVED_UPLOAD_BYTES:
+            raise ValidationError("画像ファイルは30MB以下にしてください。")
         try:
             with Image.open(image) as opened:
                 opened.verify()

@@ -17,6 +17,28 @@ steps:
       - "push"
       - "${_REGION}-docker.pkg.dev/$PROJECT_ID/palette/palette:$COMMIT_SHA"
 
+  # 新しいコードを公開する前にDBマイグレーションを完了させる。
+  # 失敗した場合は後続のWeb/Workerデプロイを止め、スキーマ不整合を防ぐ。
+  - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
+    entrypoint: "gcloud"
+    args:
+      - "run"
+      - "jobs"
+      - "update"
+      - "palette-migrate"
+      - "--image=${_REGION}-docker.pkg.dev/$PROJECT_ID/palette/palette:$COMMIT_SHA"
+      - "--region=${_REGION}"
+      - "--quiet"
+  - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
+    entrypoint: "gcloud"
+    args:
+      - "run"
+      - "jobs"
+      - "execute"
+      - "palette-migrate"
+      - "--region=${_REGION}"
+      - "--wait"
+
   # 公開用 Web サービスを、新しいイメージのリビジョンへ更新する。
   # Cloud SQL・環境変数・メモリなど、既存サービスの設定は維持される。
   - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
@@ -27,6 +49,8 @@ steps:
       - "palette-web"
       - "--image=${_REGION}-docker.pkg.dev/$PROJECT_ID/palette/palette:$COMMIT_SHA"
       - "--region=${_REGION}"
+      # 想定外のアクセス急増による料金を抑えるため、Web は最大3インスタンスにする。
+      - "--max=3"
       - "--quiet"
 
   # 非同期処理用 Worker も同じイメージに更新し、Web とコードの版をそろえる。
@@ -38,6 +62,8 @@ steps:
       - "palette-worker"
       - "--image=${_REGION}-docker.pkg.dev/$PROJECT_ID/palette/palette:$COMMIT_SHA"
       - "--region=${_REGION}"
+      # Worker は画像処理が重いため、同時処理数を最大2インスタンスに制限する。
+      - "--max=2"
       - "--quiet"
 
 images:

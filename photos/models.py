@@ -40,3 +40,11 @@ class Photo(models.Model):
 
     def __str__(self):
         return f"{self.owner} / {self.id}"
+
+
+class RateLimitBucket(models.Model):
+    # 元のユーザー名・IPアドレスをDBへ平文保存しないよう、ハッシュ化した識別子を主キーにする。
+    key = models.CharField(max_length=64, primary_key=True)
+    window_started_at = models.DateTimeField()
+    count = models.PositiveIntegerField(default=0)
+    updated_at = models.DateTimeField(auto_now=True)

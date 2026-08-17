@@ -7,7 +7,7 @@ from django.test import TestCase, override_settings
 from django.urls import reverse
 from PIL import Image
 from .models import Photo
-from .forms import optimize_upload
+from .forms import PhotoUploadForm, optimize_upload
 from .services import classify_rgb
 
 
@@ -51,3 +51,31 @@ class PhotoTests(TestCase):
         self.client.login(username="other", password="safe-password-123")
         response = self.client.post(reverse("delete_photo", args=[photo.id]))
         self.assertEqual(response.status_code, 404)
+
+    @override_settings(RATE_LIMIT_LOGIN_ATTEMPTS=1, RATE_LIMIT_LOGIN_WINDOW_SECONDS=3600)
+    def test_login_is_limited_after_failed_attempt(self):
+        # 最初の失敗は通常の認証エラー、次の試行は429で拒否される。
+        response = self.client.post(reverse("login"), {"username": "owner", "password": "wrong-password"})
+        self.assertEqual(response.status_code, 200)
+        response = self.client.post(reverse("login"), {"username": "owner", "password": "wrong-password"})
+        self.assertEqual(response.status_code, 429)
+
+    @override_settings(
+        RATE_LIMIT_UPLOAD_ATTEMPTS=1,
+        RATE_LIMIT_UPLOAD_WINDOW_SECONDS=3600,
+        SYNCHRONOUS_IMAGE_PROCESSING=True,
+    )
+    def test_upload_is_limited_per_account(self):
+        self.client.login(username="owner", password="safe-password-123")
+        response = self.client.post(reverse("upload"), {"image": image_file()})
+        self.assertEqual(response.status_code, 302)
+        response = self.client.post(reverse("upload"), {"image": image_file()})
+        self.assertEqual(response.status_code, 429)
+
+    @override_settings(MAX_RECEIVED_UPLOAD_BYTES=100)
+    def test_upload_rejects_file_larger_than_received_limit(self):
+        # Pillowで開く前に止めるため、画像として不正な内容でもサイズ超過を検出できる。
+        oversized = SimpleUploadedFile("large.bin", b"x" * 101, content_type="application/octet-stream")
+        form = PhotoUploadForm(files={"image": oversized})
+        self.assertFalse(form.is_valid())
+        self.assertIn("30MB以下", form.errors["image"][0])
