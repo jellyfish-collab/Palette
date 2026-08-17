@@ -39,3 +39,8 @@ steps:
 images:
   # Cloud Build の画面から、コミットと対応するコンテナイメージを確認できる。
   - "${_REGION}-docker.pkg.dev/$PROJECT_ID/palette/palette:$COMMIT_SHA"
+
+# トリガーで実行用サービスアカウントを指定した場合でも、
+# Cloud Build のログを Cloud Logging に保存できるようにする。
+options:
+  logging: CLOUD_LOGGING_ONLY
