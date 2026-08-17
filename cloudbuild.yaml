@@ -1,3 +1,7 @@
+substitutions:
+  # トリガー実行時にも Artifact Registry / Cloud Run のリージョンを必ず設定する。
+  _REGION: "asia-northeast1"
+
 steps:
   # GitHub の各コミットを識別できるタグで、アプリ用イメージを作成する。
   - name: "gcr.io/cloud-builders/docker"
